@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block title %} Sunmoon {% endblock %}
+
+{% block body %}
+
+<div class="wrapper">
+    <div class="center">
+        <h4 id="errormessage"></h4>
+        <span id="errorimage"></span>
+        <a class="hvr-radial-out"><input class="btn btn-dark" type="button" id="findme" value="find me",
+        onclick="findMe()"></a>
+    </div>
+</div>
+
+<script>
+
+    let button = document.querySelector("#findme");
+
+    button.onmouseover = () => {
+        button.style.color = "#15002B";
+    }
+
+    button.onmouseout = () => {
+        button.style.color = "white";
+    }
+
+    document.ontouchstart = () => {
+        button.style.backgroundColor = "yellow";
+        button.style.color = "black";
+    }
+
+    document.ontouchend = () => {
+        button.style.backgroundColor = "Transparent";
+        button.style.color = "white";
+    }
+
+    function displayLocationError(message) {
+        let errorImage = document.querySelector("#errorimage");
+        let errorMessage = document.querySelector("#errormessage");    
+        errorImage.innerHTML = '<img src="static/location-error.png" width=165, height=150>';
+        errorMessage.innerHTML = message;
+        let element = document.querySelector("#findme");
+        element.remove();
+    }
+
+    function locationSuccess(position) {
+
+        let latitude = position.coords.latitude;
+        let longitude = position.coords.longitude;
+        let altitude = position.coords.altitude;
+
+        let locationData = JSON.stringify({
+            Latitude: latitude,
+            Longitude: longitude,
+            Altitude: altitude, 
+        });
+
+        let currentdate = new Date();
+
+        let datetimeData = JSON.stringify({
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            month: currentdate.getMonth()+1,
+            day: currentdate.getDate(),
+            hours: currentdate.getHours(),
+            minutes: currentdate.getMinutes(),
+            seconds: currentdate.getSeconds(),
+        })
+
+        $.ajax({
+            type: "POST",
+            url: "/",
+            dataType: "text",
+            data: {
+                "location": locationData,
+                "datetime": datetimeData,
+            },
+            success: () => {
+                console.log("Data has been sent to the server!");
+            },
+            error: () => {
+                console.log("Error occured while sending data to the server!");
+            }
+        });
+
+    }
+
+    function findMe() {
+        $(".wrapper").animate({backgroundColor: "yellow"}, 5000);
+        navigator.geolocation.getCurrentPosition(locationSuccess, locationError);
+    }
+        
+    function locationError(error) {
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                message = "You have denied the request for Geolocation.";
+                displayLocationError(message);
+                break;
+            case error.POSITION_UNAVAILABLE:
+                message = "Your location information is unavailable.";
+                displayLocationError(message);
+                break;
+            case error.TIMEOUT:
+                message = "The request to get your location timed out.";
+                displayLocationError(message);
+                break;
+            case error.UNKNOWN_ERROR:
+                message = "An uknown error occured.";
+                displayLocationError(message);
+                break;
+        }
+        // let message = error.message;
+        // console.log(message);
+    }
+     
+</script>
+{% endblock %}
